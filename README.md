@@ -1,2 +1,2 @@
 # alexa-net-trivia
-C# port of the Alexa trivia sample https://github.com/alexa/skill-sample-nodejs-trivia
+C# port of the Alexa Space Geek sample (since pulled down)
