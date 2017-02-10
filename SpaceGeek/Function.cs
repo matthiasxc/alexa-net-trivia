@@ -87,7 +87,7 @@ namespace SpaceGeek
                         innerResponse = new PlainTextOutputSpeech();
                         (innerResponse as PlainTextOutputSpeech).Text = resource.HelpMessage;
                         break;
-                    case "GetFact":
+                    case "GetFactIntent":
                         log.LogLine($"GetFactIntent sent: send new fact");
                         innerResponse = new PlainTextOutputSpeech();
                         (innerResponse as PlainTextOutputSpeech).Text = emitNewFact(resource);

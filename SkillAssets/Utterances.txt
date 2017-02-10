@@ -1,0 +1,12 @@
+GetFactIntent give me a space fact
+GetFactIntent tell me a space fact
+GetFactIntent give me a fact
+GetFactIntent tell me a fact
+GetFactIntent tell me something
+
+GetNewFactIntent tell me a new fact
+GetNewFactIntent tell me another fact
+GetNewFactIntent tell me something new
+
+AMAZON.StopIntent we're done
+AMAZON.StopIntent that is enough
