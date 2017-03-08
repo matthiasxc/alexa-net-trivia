@@ -15,7 +15,7 @@
       "version": "1.1.0-preview1"
     },
     "Newtonsoft.Json": "9.0.1",
-    "Slight.Alexa.Core": "1.0.10-beta"
+    "Alexa.NET": "1.0.0-beta-2"
   },
 
   "tools": {

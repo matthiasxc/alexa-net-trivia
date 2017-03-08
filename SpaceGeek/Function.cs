@@ -2,12 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-
 using Amazon.Lambda.Core;
 using Amazon.Lambda.Serialization;
-using Slight.Alexa.Framework.Models.Requests;
-using Slight.Alexa.Framework.Models.Responses;
-using Slight.Alexa.Framework.Models.Types;
+using Alexa.NET.Response;
+using Alexa.NET.Request;
+using Alexa.NET.Request.Type;
+using Newtonsoft.Json;
 
 // Assembly attribute to enable the Lambda function's JSON input to be converted into a .NET class.
 [assembly: LambdaSerializerAttribute(typeof(Amazon.Lambda.Serialization.Json.JsonSerializer))]
@@ -20,10 +20,10 @@ namespace SpaceGeek
         {
             List<FactResource> resources = new List<FactResource>();
             FactResource enUSResource = new FactResource("en-US");
-            enUSResource.SkillName = "American Space Facts";
-            enUSResource.GetFactMessage = "Here's your space fact: ";
-            enUSResource.HelpMessage = "You can say tell me a space fact, or, you can say exit... What can I help you with?";
-            enUSResource.HelpReprompt = "What can I help you with?";
+            enUSResource.SkillName = "American Science Facts";
+            enUSResource.GetFactMessage = "Here's your science fact: ";
+            enUSResource.HelpMessage = "You can say tell me a science fact, or, you can say exit... What can I help you with?";
+            enUSResource.HelpReprompt = "You can say tell me a science fact to start";
             enUSResource.StopMessage = "Goodbye!";
             enUSResource.Facts.Add("A year on Mercury is just 88 days long.");
             enUSResource.Facts.Add("Despite being farther from the Sun, Venus experiences higher temperatures than Mercury.");
@@ -51,38 +51,42 @@ namespace SpaceGeek
         /// <returns></returns>
         public SkillResponse FunctionHandler(SkillRequest input, ILambdaContext context)
         {
-            Response response = new Response();
-            response.ShouldEndSession = false;
+            SkillResponse response = new SkillResponse();
+            response.Response.ShouldEndSession = false;
             IOutputSpeech innerResponse = null;
             var log = context.Logger;
+            log.LogLine($"Skill Request Object:");
+            log.LogLine(JsonConvert.SerializeObject(input));
 
             var allResources = GetResources();
             var resource = allResources.FirstOrDefault();
 
-            if (input.GetRequestType() == typeof(Slight.Alexa.Framework.Models.Requests.RequestTypes.ILaunchRequest))
+            if (input.GetRequestType() == typeof(LaunchRequest))
             {
                 log.LogLine($"Default LaunchRequest made: 'Alexa, open Science Facts");
                 innerResponse = new PlainTextOutputSpeech();
-                (innerResponse as PlainTextOutputSpeech).Text = emitNewFact(resource);
+                (innerResponse as PlainTextOutputSpeech).Text = emitNewFact(resource, true);
 
             }
-            else if (input.GetRequestType() == typeof(Slight.Alexa.Framework.Models.Requests.RequestTypes.IIntentRequest))
+            else if (input.GetRequestType() == typeof(IntentRequest))
             {
-                switch (input.Request.Intent.Name)
+                var intentRequest = (IntentRequest)input.Request;
+
+                switch (intentRequest.Intent.Name)
                 {
-                    case BuiltInIntent.Cancel:
+                    case "AMAZON.CancelIntent":
                         log.LogLine($"AMAZON.CancelIntent: send StopMessage");
                         innerResponse = new PlainTextOutputSpeech();
                         (innerResponse as PlainTextOutputSpeech).Text = resource.StopMessage;
-                        response.ShouldEndSession = true;
+                        response.Response.ShouldEndSession = true;
                         break;
-                    case BuiltInIntent.Stop:
+                    case "AMAZON.StopIntent":
                         log.LogLine($"AMAZON.StopIntent: send StopMessage");
                         innerResponse = new PlainTextOutputSpeech();
                         (innerResponse as PlainTextOutputSpeech).Text = resource.StopMessage;
-                        response.ShouldEndSession = true;
+                        response.Response.ShouldEndSession = true;
                         break;
-                    case BuiltInIntent.Help:
+                    case "AMAZON.HelpIntent":
                         log.LogLine($"AMAZON.HelpIntent: send HelpMessage");
                         innerResponse = new PlainTextOutputSpeech();
                         (innerResponse as PlainTextOutputSpeech).Text = resource.HelpMessage;
@@ -90,33 +94,34 @@ namespace SpaceGeek
                     case "GetFactIntent":
                         log.LogLine($"GetFactIntent sent: send new fact");
                         innerResponse = new PlainTextOutputSpeech();
-                        (innerResponse as PlainTextOutputSpeech).Text = emitNewFact(resource);
+                        (innerResponse as PlainTextOutputSpeech).Text = emitNewFact(resource, false);
                         break;
                     case "GetNewFactIntent":
                         log.LogLine($"GetFactIntent sent: send new fact");
                         innerResponse = new PlainTextOutputSpeech();
-                        (innerResponse as PlainTextOutputSpeech).Text = emitNewFact(resource);
+                        (innerResponse as PlainTextOutputSpeech).Text = emitNewFact(resource, false);
                         break;
                     default:
-                        log.LogLine($"Unknown intent: " + input.Request.Intent.Name);
+                        log.LogLine($"Unknown intent: " + intentRequest.Intent.Name);
                         innerResponse = new PlainTextOutputSpeech();
                         (innerResponse as PlainTextOutputSpeech).Text = resource.HelpReprompt;
                         break;
                 }
             }
 
-            response.OutputSpeech = innerResponse;
-
-            SkillResponse skillResponse = new SkillResponse();
-            skillResponse.Response = response;
-            skillResponse.Version = "1.0";
-            return skillResponse;
+            response.Response.OutputSpeech = innerResponse;
+            response.Version = "1.0";
+            log.LogLine($"Skill Response Object...");
+            log.LogLine(JsonConvert.SerializeObject(response));
+            return response;
         }
 
-        public string emitNewFact(FactResource resource)
+        public string emitNewFact(FactResource resource, bool withPreface)
         {
             Random r = new Random();
-            return resource.GetFactMessage + resource.Facts[r.Next(resource.Facts.Count)];
+            if(withPreface)
+                return resource.GetFactMessage + resource.Facts[r.Next(resource.Facts.Count)];
+            return resource.Facts[r.Next(resource.Facts.Count)];
         }
 
     }
