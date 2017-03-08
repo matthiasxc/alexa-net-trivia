@@ -2,6 +2,7 @@
 This is a C# port of the Alexa Space Geek sample (since pulled down)
 
 This is the code refered to in my 3 part Alexa Skills tutorial series 
+
 1. [AWS Setup for Alexa Skills](http://matthiasshapiro.com/2017/02/10/tutorial-alexa-skills-in-c-setup/)
 2. [Writing an Alexa Skill in C#](http://matthiasshapiro.com/2017/02/10/tutorial-alexa-skills-in-c-the-code/) - a detailed overview of this project
 3. [Deploying and Testing an Alexa Skill](http://matthiasshapiro.com/2017/02/10/tutorial-alexa-skills-in-c-setup/Deploying)
