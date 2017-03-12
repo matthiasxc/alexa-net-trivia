@@ -8,6 +8,8 @@ using Alexa.NET.Response;
 using Alexa.NET.Request;
 using Alexa.NET.Request.Type;
 using Newtonsoft.Json;
+using DbOptions.DynamoDb;
+using Amazon.DynamoDBv2.DataModel;
 
 // Assembly attribute to enable the Lambda function's JSON input to be converted into a .NET class.
 [assembly: LambdaSerializerAttribute(typeof(Amazon.Lambda.Serialization.Json.JsonSerializer))]
@@ -43,13 +45,15 @@ namespace SpaceGeek
             return resources;
         }
 
+        string stateTable = "alexaStateTable";
+
         /// <summary>
         /// A simple function that takes a string and does a ToUpper
         /// </summary>
         /// <param name="input"></param>
         /// <param name="context"></param>
         /// <returns></returns>
-        public SkillResponse FunctionHandler(SkillRequest input, ILambdaContext context)
+        public async Task<SkillResponse> FunctionHandler(SkillRequest input, ILambdaContext context)
         {
             SkillResponse response = new SkillResponse();
             response.Response.ShouldEndSession = false;
@@ -57,6 +61,15 @@ namespace SpaceGeek
             var log = context.Logger;
             log.LogLine($"Skill Request Object:");
             log.LogLine(JsonConvert.SerializeObject(input));
+
+            DynamoHelper dh = new DynamoHelper();
+            var hasTable = await dh.VerifyTable(stateTable);
+
+            if (!hasTable)
+                hasTable = await dh.CreateTable(stateTable, "RequestId");
+
+
+            var savedRequest = await SaveRequest(input, dh.GetContext());
 
             var allResources = GetResources();
             var resource = allResources.FirstOrDefault();
@@ -124,6 +137,40 @@ namespace SpaceGeek
             return resource.Facts[r.Next(resource.Facts.Count)];
         }
 
+        public async Task<bool> SaveRequest(SkillRequest request, DynamoDBContext context)
+        {
+            try
+            {
+                AlexaRequest cleanedRequest = new AlexaRequest();
+                cleanedRequest.RequestId = request.Request.RequestId;
+                cleanedRequest.RequestType = request.Request.Type;
+                cleanedRequest.SessionId = request.Session.SessionId;
+                cleanedRequest.ApplicationId = request.Session.Application.ApplicationId;
+                cleanedRequest.UserId = request.Session.User.UserId;
+                cleanedRequest.UserAccessToken = request.Session.User.AccessToken;
+                cleanedRequest.Timestamp = request.Request.Timestamp;
+                if (request.GetRequestType() == typeof(IntentRequest))
+                {
+                }
+                else if (request.GetRequestType() == typeof(AudioPlayerRequest))
+                {
+                    var audioRequest = (AudioPlayerRequest)request.Request;
+                    cleanedRequest.Intent = audioRequest.AudioRequestType.ToString();
+                    cleanedRequest.EnqueuedAudioToken = audioRequest.EnqueuedToken;
+                    cleanedRequest.OffsetInMilliseconds = audioRequest.OffsetInMilliseconds;
+                }
+
+                await context.SaveAsync<AlexaRequest>(cleanedRequest);
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+
+        }
+
     }
         
     public class FactResource
@@ -142,4 +189,7 @@ namespace SpaceGeek
         public string HelpReprompt { get; set; }
         public string StopMessage { get; set; }
     }
+
+
+   
 }
