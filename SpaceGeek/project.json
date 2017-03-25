@@ -15,7 +15,6 @@
       "version": "1.1.0-preview1"
     },
     "Newtonsoft.Json": "9.0.1",
-    "DbOptions": "1.0.0-*",
     "AWSSDK.DynamoDBv2": "3.3.4",
     "Alexa.NET": "1.0.0-beta-3"
   },
